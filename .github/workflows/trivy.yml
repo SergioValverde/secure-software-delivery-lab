@@ -34,4 +34,3 @@ jobs:
           severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
           exit-code: "0"
           hide-progress: "true"
-         
