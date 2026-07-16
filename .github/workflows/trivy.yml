@@ -34,8 +34,4 @@ jobs:
           severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
           exit-code: "0"
           hide-progress: "true"
-          
-      - name: Simulate required-check failure
-        run: |
-          echo "::error::Intentional failure to validate ruleset enforcement"
-          exit 1
+         
