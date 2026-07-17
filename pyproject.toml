@@ -12,11 +12,14 @@ dependencies = [
     "uvicorn==0.51.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "httpx2==2.5.0",
     "pytest==9.1.1",
 ]
+
+[tool.uv]
+required-version = "==0.11.29"
 
 [tool.setuptools.packages.find]
 where = ["src"]
