@@ -24,13 +24,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
         with:
+          version: "0.11.29"
           python-version: "3.13"
+          enable-cache: true
 
-      - name: Install project and test dependencies
-        run: python -m pip install -e ".[dev]"
+      - name: Verify dependency lock
+        run: uv lock --check
+
+      - name: Synchronize locked dependencies
+        run: uv sync --locked
 
       - name: Run tests
-        run: python -m pytest -q -W error
+        run: uv run --no-sync python -m pytest -q -W error
