@@ -1,0 +1,94 @@
+name: Container Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  container:
+    name: Container build and runtime test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    env:
+      IMAGE_NAME: secure-software-delivery-lab:${{ github.sha }}
+      CONTAINER_NAME: secure-software-delivery-lab-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Build container image
+        run: docker build --pull --tag "$IMAGE_NAME" .
+
+      - name: Verify non-root runtime user
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          runtime_uid="$(
+            docker run \
+              --rm \
+              --entrypoint python \
+              "$IMAGE_NAME" \
+              -c 'import os; print(os.getuid())'
+          )"
+
+          echo "Container runtime UID: $runtime_uid"
+
+          if [[ "$runtime_uid" == "0" ]]; then
+            echo "::error::Container is configured to run as root"
+            exit 1
+          fi
+
+      - name: Start container and verify health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cleanup() {
+            echo "Container logs:"
+            docker logs "$CONTAINER_NAME" 2>&1 || true
+            docker rm --force "$CONTAINER_NAME" >/dev/null 2>&1 || true
+          }
+
+          trap cleanup EXIT
+
+          docker run \
+            --detach \
+            --name "$CONTAINER_NAME" \
+            --publish 127.0.0.1:8000:8000 \
+            "$IMAGE_NAME"
+
+          for attempt in {1..30}; do
+            if response="$(
+              curl \
+                --fail \
+                --silent \
+                http://127.0.0.1:8000/health
+            )"; then
+              if [[ "$response" != '{"status":"ok"}' ]]; then
+                echo "::error::Unexpected health response: $response"
+                exit 1
+              fi
+
+              echo "Health endpoint returned: $response"
+              exit 0
+            fi
+
+            echo "Waiting for the application: attempt $attempt/30"
+            sleep 1
+          done
+
+          echo "::error::Application did not become healthy"
+          exit 1
