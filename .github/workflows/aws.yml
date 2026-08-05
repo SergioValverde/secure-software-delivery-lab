@@ -19,4 +19,4 @@ jobs:
           role-to-assume: arn:aws:iam::592931547242:role/RoleOIDC
           aws-region: eu-central-1
 
-      - run: aws sts get-caller-identity
+      - run: aws s3 rm
