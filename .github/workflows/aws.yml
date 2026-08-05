@@ -16,7 +16,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/GitHubOIDCRole
+          role-to-assume: arn:aws:iam::592931547242:role/RoleOIDC
           aws-region: eu-central-1
 
       - run: aws sts get-caller-identity
