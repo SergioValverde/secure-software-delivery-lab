@@ -72,9 +72,41 @@ jobs:
           exit-code: "0"
           hide-progress: "true"
           limit-severities-for-sarif: "true"
+          
+      - name: Inspect container image SARIF
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s trivy-container-results.sarif
+
+          python3 - <<'PY'
+          import json
+
+          path = "trivy-container-results.sarif"
+
+          with open(path, encoding="utf-8") as f:
+              sarif = json.load(f)
+
+          results = [
+              result
+              for run in sarif.get("runs", [])
+              for result in run.get("results", [])
+          ]
+
+          print(f"SARIF result count: {len(results)}")
+
+          for result in results:
+              print(
+                  "ruleId=",
+                  result.get("ruleId"),
+                  "level=",
+                  result.get("level"),
+              )
+          PY       
 
       - name: Upload container image SARIF
-        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3
+        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9
         with:
           sarif_file: "trivy-container-results.sarif"
           category: "trivy-container-image"
