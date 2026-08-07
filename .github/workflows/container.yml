@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -57,7 +58,27 @@ jobs:
           exit-code: "1"
           hide-progress: "true"
           
+      - name: Generate container image SARIF
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: "image"
+          image-ref: "${{ env.IMAGE_NAME }}"
+          scanners: "vuln"
+          vuln-type: "os,library"
+          severity: "CRITICAL"
+          ignore-unfixed: "false"
+          format: "sarif"
+          output: "trivy-container-results.sarif"
+          exit-code: "0"
+          hide-progress: "true"
+          limit-severities-for-sarif: "true"
 
+      - name: Upload container image SARIF
+        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9
+        with:
+          sarif_file: "trivy-container-results.sarif"
+          category: "trivy-container-image"
+      
       - name: Verify non-root runtime user
         shell: bash
         run: |
