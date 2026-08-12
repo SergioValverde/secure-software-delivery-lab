@@ -22,7 +22,22 @@ jobs:
         run: aws sts get-caller-identity
 
       - name: Assume DevelopmentDeploymentRole
+        id: assume-dev
         run: |
-          aws sts assume-role \
-            --role-arn arn:aws:iam::592931547242:role/DevelopmentDeploymentRole \
-            --role-session-name development-test
+          CREDS=$(aws sts assume-role \
+          --role-arn arn:aws:iam::592931547242:role/DevelopmentDeploymentRole \
+          --role-session-name github-development)
+
+          echo "AWS_ACCESS_KEY_ID=$(echo "$CREDS" | jq -r '.Credentials.AccessKeyId')" >> "$GITHUB_ENV"
+          echo "AWS_SECRET_ACCESS_KEY=$(echo "$CREDS" | jq -r '.Credentials.SecretAccessKey')" >> "$GITHUB_ENV"
+          echo "AWS_SESSION_TOKEN=$(echo "$CREDS" | jq -r '.Credentials.SessionToken')" >> "$GITHUB_ENV
+
+      - name: Verify development role
+        run: aws sts get-caller-identity
+        
+      - name: Upload deployment artifact
+        run: |
+          echo "commit=${GITHUB_SHA}" > deployment.txt
+
+          aws s3 cp deployment.txt \
+          s3://development-deploy-artifacts-592931547242/releases/${GITHUB_SHA}.txt
