@@ -40,4 +40,4 @@ jobs:
           echo "commit=${GITHUB_SHA}" > deployment.txt
 
           aws s3 cp deployment.txt \
-          s3://development-deploy-artifacts-592931547242/releases/${GITHUB_SHA}.txt
+          s3://laboratori-4/releases/${GITHUB_SHA}.txt
