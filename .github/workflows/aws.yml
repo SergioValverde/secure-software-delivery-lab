@@ -12,11 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
-
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Assume RoleOIDC via GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::592931547242:role/RoleOIDC
           aws-region: eu-central-1
 
-      - run: aws s3 rm
+      - name: Check first identity
+        run: aws sts get-caller-identity
+
+      - name: Assume DevelopmentDeploymentRole
+        run: |
+          aws sts assume-role \
+            --role-arn arn:aws:iam::592931547242:role/DevelopmentDeploymentRole \
+            --role-session-name development-test
